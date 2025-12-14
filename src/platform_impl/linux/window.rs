@@ -373,7 +373,7 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
   }
 
   pub fn set_focusable(&self, focusable: bool) {
-    self.window.set_accept_focus(focusable);
+    self.window.set_can_focus(focusable);
   }
 
   pub fn is_focused(&self) -> bool {

@@ -38,7 +38,6 @@ use crate::{
 };
 
 use super::{
-  device,
   gtk_window::ApplicationWindow,
   keyboard,
   monitor::{self, MonitorHandle},
