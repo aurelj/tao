@@ -216,6 +216,7 @@ impl<T: 'static> EventLoop<T> {
   }
 
   fn new_gtk(app_id: Option<&str>) -> Result<EventLoop<T>, Box<dyn Error>> {
+    gtk::init()?;
     let context = MainContext::default();
     let app = Application::new(app_id, gtk::gio::ApplicationFlags::empty());
     let app_ = app.clone();
