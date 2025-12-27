@@ -11,6 +11,9 @@ use std::{
 
 use gtk::{gdk, glib, prelude::*, CssProvider, Settings};
 
+#[cfg(feature = "libadwaita")]
+use libadwaita::prelude::AdwApplicationWindowExt;
+
 use crate::{
   dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Position, Size},
   error::{ExternalError, NotSupportedError, OsError as RootOsError},
@@ -72,6 +75,10 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
 
     let default_vbox = if pl_attribs.default_vbox {
       let box_ = gtk::Box::new(gtk::Orientation::Vertical, 0);
+      // AdwApplicationWindow uses set_content(), gtk::ApplicationWindow uses set_child()
+      #[cfg(feature = "libadwaita")]
+      window.set_content(Some(&box_));
+      #[cfg(not(feature = "libadwaita"))]
       window.set_child(Some(&box_));
       Some(box_)
     } else {
