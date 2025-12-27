@@ -14,15 +14,34 @@ use crate::window::WindowAttributes;
 
 use super::{Parent, PlatformSpecificWindowBuilderAttributes};
 
+// Libadwaita support - conditional Application type
+#[cfg(feature = "libadwaita")]
+use libadwaita as adw;
+
+#[cfg(feature = "libadwaita")]
+type AppType = adw::Application;
+#[cfg(not(feature = "libadwaita"))]
+type AppType = gtk::Application;
+
+#[cfg(feature = "libadwaita")]
+glib::wrapper! {
+    pub struct ApplicationWindow(ObjectSubclass<imp::ApplicationWindow>)
+        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, adw::ApplicationWindow,
+        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
+                    gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+}
+
+#[cfg(not(feature = "libadwaita"))]
 glib::wrapper! {
     pub struct ApplicationWindow(ObjectSubclass<imp::ApplicationWindow>)
         @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow,
-        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
+                    gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
 impl ApplicationWindow {
   pub fn new(
-    app: &gtk::Application,
+    app: &AppType,
     attributes: &WindowAttributes,
     pl_attribs: &PlatformSpecificWindowBuilderAttributes,
   ) -> Self {

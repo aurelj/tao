@@ -12,6 +12,10 @@ use gtk::{
   subclass::prelude::*,
 };
 
+// Libadwaita support - conditional imports
+#[cfg(feature = "libadwaita")]
+use libadwaita::subclass::application_window::AdwApplicationWindowImpl;
+
 #[derive(Debug, Default)]
 // By implementing Default we don't have to provide a `new` fn in our
 // ObjectSubclass impl.
@@ -24,6 +28,10 @@ pub struct ApplicationWindow {
 impl ObjectSubclass for ApplicationWindow {
   const NAME: &'static str = "ExTaoWindow";
   type Type = super::ApplicationWindow;
+
+  #[cfg(feature = "libadwaita")]
+  type ParentType = libadwaita::ApplicationWindow;
+  #[cfg(not(feature = "libadwaita"))]
   type ParentType = gtk::ApplicationWindow;
 }
 
@@ -57,3 +65,6 @@ impl WidgetImpl for ApplicationWindow {
 }
 impl WindowImpl for ApplicationWindow {}
 impl ApplicationWindowImpl for ApplicationWindow {}
+
+#[cfg(feature = "libadwaita")]
+impl AdwApplicationWindowImpl for ApplicationWindow {}

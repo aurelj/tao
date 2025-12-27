@@ -17,9 +17,21 @@ use gtk::{
   gdk::{self, Cursor, ScrollDirection, SurfaceEdge},
   glib::{self, closure_local, MainContext},
   prelude::*,
-  Application, EventControllerFocus, EventControllerKey, EventControllerMotion,
+  EventControllerFocus, EventControllerKey, EventControllerMotion,
   EventControllerScroll, EventControllerScrollFlags, GestureClick, Settings,
 };
+
+// Libadwaita support - conditional Application type
+#[cfg(feature = "libadwaita")]
+use libadwaita as adw;
+
+#[cfg(not(feature = "libadwaita"))]
+use gtk::Application;
+
+#[cfg(feature = "libadwaita")]
+type GtkApp = adw::Application;
+#[cfg(not(feature = "libadwaita"))]
+type GtkApp = Application;
 
 #[cfg(feature = "x11")]
 use crate::platform_impl::platform::device;
@@ -54,7 +66,7 @@ pub struct EventLoopWindowTarget<T> {
   /// Gdk display
   pub(crate) display: gdk::Display,
   /// Gtk application
-  pub(crate) app: Application,
+  pub(crate) app: GtkApp,
   /// Window Ids of the application
   pub(crate) windows: Rc<RefCell<HashSet<WindowId>>>,
   /// Window requests sender
@@ -216,8 +228,18 @@ impl<T: 'static> EventLoop<T> {
   }
 
   fn new_gtk(app_id: Option<&str>) -> Result<EventLoop<T>, Box<dyn Error>> {
+    // Initialize GTK or libadwaita
+    #[cfg(feature = "libadwaita")]
+    adw::init().expect("Failed to initialize libadwaita");
+    #[cfg(not(feature = "libadwaita"))]
     gtk::init()?;
+
     let context = MainContext::default();
+
+    // Create application with appropriate type
+    #[cfg(feature = "libadwaita")]
+    let app = adw::Application::new(app_id, gtk::gio::ApplicationFlags::empty());
+    #[cfg(not(feature = "libadwaita"))]
     let app = Application::new(app_id, gtk::gio::ApplicationFlags::empty());
     let app_ = app.clone();
     app.register(gtk::gio::Cancellable::NONE)?;

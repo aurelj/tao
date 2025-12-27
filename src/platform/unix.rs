@@ -266,7 +266,8 @@ impl<T> EventLoopWindowTargetExtUnix for EventLoopWindowTarget<T> {
 
   #[inline]
   fn gtk_app(&self) -> &gtk::Application {
-    &self.p.app
+    use gtk::prelude::Cast;
+    self.p.app.upcast_ref()
   }
 
   #[inline]
