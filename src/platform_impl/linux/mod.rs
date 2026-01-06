@@ -14,6 +14,7 @@ mod window;
 
 pub mod gtk_window;
 pub mod taskbar;
+#[cfg(feature = "x11")]
 pub mod x11;
 
 pub use self::keycode::{keycode_from_scancode, keycode_to_scancode};

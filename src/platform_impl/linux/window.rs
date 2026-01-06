@@ -71,7 +71,7 @@ impl Window {
     let draw_tx = event_loop_window_target.draw_tx.clone();
     //let is_wayland = event_loop_window_target.is_wayland();
 
-let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
+    let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
 
     let default_vbox = if pl_attribs.default_vbox {
       let box_ = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -607,8 +607,7 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
   #[inline]
   pub fn raw_window_handle_rwh_04(&self) -> rwh_04::RawWindowHandle {
     if self.is_wayland() {
-      use gdk_wayland::prelude::WaylandSurfaceExtManual;
-      use gdk_wayland::wayland_client::Proxy;
+      use gdk_wayland::{prelude::WaylandSurfaceExtManual, wayland_client::Proxy};
 
       let mut window_handle = rwh_04::WaylandHandle::empty();
       if let Some(surface) = self.window.surface() {
@@ -637,8 +636,7 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
   #[inline]
   pub fn raw_window_handle_rwh_05(&self) -> rwh_05::RawWindowHandle {
     if self.is_wayland() {
-      use gdk_wayland::prelude::WaylandSurfaceExtManual;
-      use gdk_wayland::wayland_client::Proxy;
+      use gdk_wayland::{prelude::WaylandSurfaceExtManual, wayland_client::Proxy};
 
       let mut window_handle = rwh_05::WaylandWindowHandle::empty();
       if let Some(surface) = self.window.surface() {
@@ -695,8 +693,7 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
   pub fn raw_window_handle_rwh_06(&self) -> Result<rwh_06::RawWindowHandle, rwh_06::HandleError> {
     if let Some(surface) = self.window.surface() {
       if self.is_wayland() {
-        use gdk_wayland::prelude::WaylandSurfaceExtManual;
-        use gdk_wayland::wayland_client::Proxy;
+        use gdk_wayland::{prelude::WaylandSurfaceExtManual, wayland_client::Proxy};
 
         Ok(
           rwh_06::WaylandWindowHandle::new({
@@ -712,10 +709,15 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
           .into(),
         )
       } else {
-        Ok(
-          rwh_06::XlibWindowHandle::new(surface.downcast::<gdk_x11::X11Surface>().unwrap().xid())
-            .into(),
-        )
+        #[cfg(feature = "x11")]
+        {
+          Ok(
+            rwh_06::XlibWindowHandle::new(surface.downcast::<gdk_x11::X11Surface>().unwrap().xid())
+              .into(),
+          )
+        }
+        #[cfg(not(feature = "x11"))]
+        Err(rwh_06::HandleError::NotSupported)
       }
     } else {
       Err(rwh_06::HandleError::Unavailable)
@@ -743,20 +745,25 @@ let window = ApplicationWindow::new(app, &attributes, &pl_attribs);
         .into(),
       )
     } else {
-      let display = display.downcast::<gdk_x11::X11Display>().unwrap();
+      #[cfg(feature = "x11")]
+      {
+        let display = display.downcast::<gdk_x11::X11Display>().unwrap();
 
-      Ok(
-        rwh_06::XlibDisplayHandle::new(
-          Some(
-            std::ptr::NonNull::new(unsafe {
-              gdk_x11::ffi::gdk_x11_display_get_xdisplay(display.as_ptr() as *mut _)
-            })
-            .expect("X11 display should never be null"),
-          ),
-          display.screen().screen_number(),
+        Ok(
+          rwh_06::XlibDisplayHandle::new(
+            Some(
+              std::ptr::NonNull::new(unsafe {
+                gdk_x11::ffi::gdk_x11_display_get_xdisplay(display.as_ptr() as *mut _)
+              })
+              .expect("X11 display should never be null"),
+            ),
+            display.screen().screen_number(),
+          )
+          .into(),
         )
-        .into(),
-      )
+      }
+      #[cfg(not(feature = "x11"))]
+      Err(rwh_06::HandleError::NotSupported)
     }
   }
 

@@ -17,8 +17,8 @@ use gtk::{
   gdk::{self, Cursor, ScrollDirection, SurfaceEdge},
   glib::{self, closure_local, MainContext},
   prelude::*,
-  EventControllerFocus, EventControllerKey, EventControllerMotion,
-  EventControllerScroll, EventControllerScrollFlags, GestureClick, Settings,
+  EventControllerFocus, EventControllerKey, EventControllerMotion, EventControllerScroll,
+  EventControllerScrollFlags, GestureClick, Settings,
 };
 
 // Libadwaita support - conditional Application type
@@ -140,12 +140,17 @@ impl<T> EventLoopWindowTarget<T> {
         .into(),
       )
     } else {
-      let display = display.downcast::<gdk_x11::X11Display>().unwrap();
-      let xdisplay = std::ptr::NonNull::new(unsafe {
-        gdk_x11::ffi::gdk_x11_display_get_xdisplay(display.as_ptr() as *mut _)
-      });
-      let xscreen = display.screen().screen_number();
-      Ok(rwh_06::XlibDisplayHandle::new(xdisplay, xscreen).into())
+      #[cfg(feature = "x11")]
+      {
+        let display = display.downcast::<gdk_x11::X11Display>().unwrap();
+        let xdisplay = std::ptr::NonNull::new(unsafe {
+          gdk_x11::ffi::gdk_x11_display_get_xdisplay(display.as_ptr() as *mut _)
+        });
+        let xscreen = display.screen().screen_number();
+        Ok(rwh_06::XlibDisplayHandle::new(xdisplay, xscreen).into())
+      }
+      #[cfg(not(feature = "x11"))]
+      Err(rwh_06::HandleError::NotSupported)
     }
   }
 
@@ -391,9 +396,12 @@ impl<T: 'static> EventLoop<T> {
             WindowRequest::UserAttention(request_type) => {
               if is_wayland && request_type.is_some() {
                 window.present();
-              } else if let Some(surface) = window.surface() {
-                if let Ok(x11_surface) = surface.downcast::<gdk_x11::X11Surface>() {
-                  x11_surface.set_urgency_hint(request_type.is_some());
+              } else {
+                #[cfg(feature = "x11")]
+                if let Some(surface) = window.surface() {
+                  if let Ok(x11_surface) = surface.downcast::<gdk_x11::X11Surface>() {
+                    x11_surface.set_urgency_hint(request_type.is_some());
+                  }
                 }
               }
             }
